@@ -1,4 +1,4 @@
-# Document Weaver — Project Rules
+# Document Weaver Pro — Project Rules
 
 ## Deployment Workflow
 

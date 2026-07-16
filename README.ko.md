@@ -1,6 +1,6 @@
-# Document Weaver
+# Document Weaver Pro
 
-> **[English README](https://github.com/GS-AX/doc-weaver/blob/master/README.md)**
+> **[English README](https://github.com/champs-wang/Document-Weaver-Pro/blob/main/README.md)**
 
 **복붙은 그만. 파일을 드롭하면 노트가 됩니다.**
 
@@ -56,20 +56,20 @@ API 키 없음. 클라우드 없음. 완전 오프라인.
 
 ### 커뮤니티 플러그인 (권장)
 1. Obsidian → **설정 → 커뮤니티 플러그인 → 탐색**
-2. **Document Weaver** 검색 후 **설치** 클릭
+2. **Document Weaver Pro** 검색 후 **설치** 클릭
 3. **활성화** 클릭
 
 ### 수동 설치
-1. [Releases](https://github.com/GS-AX/doc-weaver/releases)에서 `main.js`, `manifest.json` 다운로드
+1. [Releases](https://github.com/champs-wang/Document-Weaver-Pro/releases)에서 `main.js`, `manifest.json` 다운로드
 2. Vault의 `.obsidian/plugins/document-weaver/` 폴더에 복사
-3. Obsidian → **설정 → 커뮤니티 플러그인** → **Document Weaver** 활성화
+3. Obsidian → **설정 → 커뮤니티 플러그인** → **Document Weaver Pro** 활성화
 
 ---
 
 ## 사용법
 
 ### 파일 가져오기
-- **커맨드 팔레트**: `Doc Weaver: 파일 가져오기…` → 파일 선택 (다중 선택 가능)
+- **커맨드 팔레트**: `Document Weaver Pro: 파일 가져오기…` → 파일 선택 (다중 선택 가능)
 - **드래그 앤 드롭**: 지원 파일을 Obsidian 창 어디에나 드롭하면 자동 변환됩니다 — 에디터, 파일 탐색기 등 위치 무관. 미지원 파일(이미지, `.md` 등)은 Obsidian 기본 동작으로 처리됩니다.
 - **감시 폴더**: 설정에서 지정한 OS 폴더를 자동으로 감시, 새 파일 감지 시 자동 변환
 

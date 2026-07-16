@@ -3,7 +3,7 @@ export const en = {
 	CMD_IMPORT_FILE: 'Import file…',
 
 	// Settings headings
-	SETTINGS_TITLE: 'Doc Weaver',
+	SETTINGS_TITLE: 'Document Weaver Pro',
 	SETTINGS_SECTION_OUTPUT: 'Output',
 	SETTINGS_SECTION_WATCH: 'Watch Folder',
 	SETTINGS_SECTION_ADVANCED: 'Advanced',

@@ -50,7 +50,7 @@ export class WatchScheduler {
 				try {
 					await this.scanFolder(trimmed);
 				} catch (err) {
-					console.error(`Doc Weaver watch: error scanning "${trimmed}"`, err);
+					console.error(`Document Weaver Pro watch: error scanning "${trimmed}"`, err);
 				}
 			}
 		} finally {
@@ -110,7 +110,7 @@ export class WatchScheduler {
 				await this.handleOriginal(filePath);
 			}
 		} catch (err) {
-			console.error(`Doc Weaver watch: failed to process "${filename}"`, err);
+			console.error(`Document Weaver Pro watch: failed to process "${filename}"`, err);
 		}
 	}
 
@@ -155,7 +155,7 @@ export class WatchScheduler {
 					break;
 			}
 		} catch (err) {
-			console.error(`Doc Weaver watch: failed to handle original "${filePath}"`, err);
+			console.error(`Document Weaver Pro watch: failed to handle original "${filePath}"`, err);
 		}
 	}
 }

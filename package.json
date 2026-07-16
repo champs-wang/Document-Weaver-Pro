@@ -1,5 +1,5 @@
 {
-  "name": "document-weaver",
+  "name": "doc-weaver-pro",
   "version": "1.0.0",
   "description": "Convert local documents (Word, PDF, PowerPoint, HWP, Excel) to Markdown for Obsidian",
   "main": "main.js",
@@ -17,7 +17,7 @@
     "hwp",
     "converter"
   ],
-  "author": "GS-AX",
+  "author": "champswang",
   "license": "MIT",
   "devDependencies": {
     "@types/node": "^20.0.0",

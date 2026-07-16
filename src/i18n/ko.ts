@@ -3,7 +3,7 @@ import type { Translations } from './en';
 export const ko: Translations = {
 	CMD_IMPORT_FILE: '파일 가져오기…',
 
-	SETTINGS_TITLE: 'Doc Weaver',
+	SETTINGS_TITLE: 'Document Weaver Pro',
 	SETTINGS_SECTION_OUTPUT: '출력',
 	SETTINGS_SECTION_WATCH: '감시 폴더',
 	SETTINGS_SECTION_ADVANCED: '고급',

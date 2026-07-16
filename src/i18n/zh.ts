@@ -3,7 +3,7 @@ import type { Translations } from './en';
 export const zh: Translations = {
 	CMD_IMPORT_FILE: '导入文件…',
 
-	SETTINGS_TITLE: 'Doc Weaver',
+	SETTINGS_TITLE: 'Document Weaver Pro',
 	SETTINGS_SECTION_OUTPUT: '输出',
 	SETTINGS_SECTION_WATCH: '监视文件夹',
 	SETTINGS_SECTION_ADVANCED: '高级设置',

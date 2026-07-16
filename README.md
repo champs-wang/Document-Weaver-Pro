@@ -1,10 +1,12 @@
-# Document Weaver
+# Document Weaver Pro
 
-> **[한국어 README](https://github.com/GS-AX/doc-weaver/blob/master/README.ko.md)**
+> Forked from [GS-AX/doc-weaver](https://github.com/GS-AX/doc-weaver). Huge thanks to the original author **GS-AX** for creating this excellent plugin.
+
+> **[한국어 README](https://github.com/champs-wang/Document-Weaver-Pro/blob/main/README.ko.md)**
 
 **Stop copy-pasting. Drop files, get notes.**
 
-Document Weaver converts Word, PDF, PowerPoint, Excel, and HWP files into clean Markdown — instantly. Drag files onto the window, point a watch folder at your Downloads, or pick files from the command palette. Images are extracted automatically. Front matter is injected. Done.
+Document Weaver Pro converts Word, PDF, PowerPoint, Excel, and HWP files into clean Markdown — instantly. Drag files onto the window, point a watch folder at your Downloads, or pick files from the command palette. Images are extracted automatically. Front matter is injected. Done.
 
 - 📄 **DOCX** — headings, bold, italic, tables and images, all preserved
 - 📑 **PDF** — text layer extracted with automatic heading detection
@@ -56,13 +58,13 @@ The local-file companion to [Confluence Weaver](https://github.com/GS-AX/conflue
 
 ### Community Plugins (recommended)
 1. Obsidian → **Settings → Community Plugins → Browse**
-2. Search for **Document Weaver** and click **Install**
+2. Search for **Document Weaver Pro** and click **Install**
 3. Click **Enable**
 
 ### Manual
-1. Download `main.js` and `manifest.json` from [Releases](https://github.com/GS-AX/doc-weaver/releases)
+1. Download `main.js` and `manifest.json` from [Releases](https://github.com/champs-wang/Document-Weaver-Pro/releases)
 2. Copy both files to `.obsidian/plugins/document-weaver/` inside your Vault
-3. Obsidian → **Settings → Community Plugins** → enable **Document Weaver**
+3. Obsidian → **Settings → Community Plugins** → enable **Document Weaver Pro**
 
 ---
 
@@ -72,8 +74,8 @@ The local-file companion to [Confluence Weaver](https://github.com/GS-AX/conflue
 
 | Method | How |
 |---|---|
-| **Command palette** | `Doc Weaver: Import file…` → system file picker (multi-select supported) |
-| **Drag & drop** | Drop supported files anywhere onto the Obsidian window — editor, file explorer, anywhere. Document Weaver intercepts the drop and converts automatically. Unsupported files (images, `.md`, etc.) pass through to Obsidian as normal. |
+| **Command palette** | `Document Weaver Pro: Import file…` → system file picker (multi-select supported) |
+| **Drag & drop** | Drop supported files anywhere onto the Obsidian window — editor, file explorer, anywhere. Document Weaver Pro intercepts the drop and converts automatically. Unsupported files (images, `.md`, etc.) pass through to Obsidian as normal. |
 | **Watch folder** | Configure inbox folders in settings; new files are converted automatically |
 
 ### Output

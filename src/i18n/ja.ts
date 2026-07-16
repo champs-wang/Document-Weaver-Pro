@@ -3,7 +3,7 @@ import type { Translations } from './en';
 export const ja: Translations = {
 	CMD_IMPORT_FILE: 'ファイルをインポート…',
 
-	SETTINGS_TITLE: 'Doc Weaver',
+	SETTINGS_TITLE: 'Document Weaver Pro',
 	SETTINGS_SECTION_OUTPUT: '出力',
 	SETTINGS_SECTION_WATCH: '監視フォルダ',
 	SETTINGS_SECTION_ADVANCED: '詳細設定',
