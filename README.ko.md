@@ -80,7 +80,7 @@ API 키 없음. 클라우드 없음. 완전 오프라인.
 ---
 source_file: "보고서.docx"
 source_format: "docx"
-imported_at: "2026-05-23T10:00:00+09:00"
+imported_at: "2026-05-23 10:00:00"
 ---
 
 # 보고서 제목

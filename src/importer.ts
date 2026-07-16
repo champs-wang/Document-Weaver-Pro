@@ -215,11 +215,15 @@ export class Importer {
 
 	private localISOString(): string {
 		const now = new Date();
-		const offset = -now.getTimezoneOffset();
-		const sign = offset >= 0 ? '+' : '-';
-		const hh = String(Math.floor(Math.abs(offset) / 60)).padStart(2, '0');
-		const mm = String(Math.abs(offset) % 60).padStart(2, '0');
-		return now.toISOString().replace('Z', `${sign}${hh}:${mm}`);
+		// Use China Standard Time (UTC+8)
+		const chinaTime = new Date(now.getTime() + (8 * 60 - now.getTimezoneOffset()) * 60000);
+		const Y = chinaTime.getFullYear();
+		const M = String(chinaTime.getMonth() + 1).padStart(2, '0');
+		const D = String(chinaTime.getDate()).padStart(2, '0');
+		const h = String(chinaTime.getHours()).padStart(2, '0');
+		const m = String(chinaTime.getMinutes()).padStart(2, '0');
+		const s = String(chinaTime.getSeconds()).padStart(2, '0');
+		return `${Y}-${M}-${D} ${h}:${m}:${s}`;
 	}
 
 	private resolveAssetLinks(markdown: string, noteName: string): string {

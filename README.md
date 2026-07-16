@@ -86,7 +86,7 @@ Converted notes are saved to the configured destination folder (default: `Import
 ---
 source_file: "report.docx"
 source_format: "docx"
-imported_at: "2026-05-23T10:00:00+09:00"
+imported_at: "2026-05-23 10:00:00"
 ---
 
 # Report Title
