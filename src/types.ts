@@ -22,7 +22,7 @@ export const DEFAULT_SETTINGS: DocWeaverSettings = {
 	filenameCollision: 'overwrite',
 	watchFolders: [],
 	watchIntervalMin: 5,
-	watchSubfolders: false,
+	watchSubfolders: true,
 	afterImport: 'keep',
 	archiveFolder: '',
 	pptxOutput: 'single',

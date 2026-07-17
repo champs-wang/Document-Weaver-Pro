@@ -210,6 +210,18 @@ export class Importer {
 			`source_format: "${format}"`,
 			`imported_at: "${now}"`,
 		];
+		// Add note_path (wiki-link to source file) if source is inside the vault
+		if (sourceAbsPath) {
+			const vaultRoot = (this.app.vault.adapter as any).getBasePath?.() ?? '';
+			if (vaultRoot) {
+				const normalizedRoot = vaultRoot.replace(/\\/g, '/').replace(/\/$/, '');
+				const normalizedSource = sourceAbsPath.replace(/\\/g, '/');
+				if (normalizedSource.startsWith(normalizedRoot + '/')) {
+					const relativePath = normalizedSource.substring(normalizedRoot.length + 1);
+					lines.push(`note_path: "[[${relativePath}]]"`);
+				}
+			}
+		}
 		if (extra) {
 			for (const [k, v] of Object.entries(extra)) {
 				lines.push(`${k}: ${JSON.stringify(v)}`);
