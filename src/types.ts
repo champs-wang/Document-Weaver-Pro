@@ -19,11 +19,11 @@ export interface DocWeaverSettings {
 export const DEFAULT_SETTINGS: DocWeaverSettings = {
 	destinationFolder: 'Imported',
 	assetSubfolder: '_assets',
-	filenameCollision: 'number',
+	filenameCollision: 'overwrite',
 	watchFolders: [],
 	watchIntervalMin: 5,
 	watchSubfolders: false,
-	afterImport: 'archive',
+	afterImport: 'keep',
 	archiveFolder: '',
 	pptxOutput: 'single',
 	useWikilinks: true,

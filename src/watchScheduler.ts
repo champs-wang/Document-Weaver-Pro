@@ -102,7 +102,7 @@ export class WatchScheduler {
 		try {
 			const buffer = await fs.promises.readFile(filePath);
 			const file = new File([buffer], filename);
-			const result = await this.importer.importSingleFile(file, { skipOpen: false });
+			const result = await this.importer.importSingleFile(file, { skipOpen: false, sourceAbsPath: filePath });
 
 			if (result.success) {
 				this.seen.add(seenKey);

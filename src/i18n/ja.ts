@@ -71,4 +71,10 @@ export const ja: Translations = {
 	STAT_IMAGES: '画像{n}件',
 	STAT_TABLES_ONE: '表1件',
 	STAT_TABLES: '表{n}件',
+
+	SYNC_TITLE: '今すぐ同期',
+	SYNC_DESC: 'すべてのインポート済みファイルを再変換し、最新のプラグイン機能を適用します',
+	SYNC_NO_FOLDER: '保存先フォルダが存在しないか空です',
+	SYNC_RESULT: '同期完了: 成功 {success}件, 失敗 {fail}件, スキップ {skip}件',
+	SYNC_START: '同期を開始...',
 };

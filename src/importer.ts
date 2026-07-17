@@ -1,4 +1,5 @@
 import { App, Notice, TFile, normalizePath } from 'obsidian';
+import * as fs from 'fs';
 import { DocWeaverSettings, ImportResult, ConverterOutput, SUPPORTED_EXTENSIONS, SupportedExtension } from './types';
 import { convertDocx } from './converters/docxConverter';
 import { convertPlain } from './converters/plainConverter';
@@ -60,7 +61,7 @@ export class Importer {
 		return results;
 	}
 
-	async importSingleFile(file: File, opts?: { skipOpen?: boolean }): Promise<ImportResult> {
+	async importSingleFile(file: File, opts?: { skipOpen?: boolean; sourceAbsPath?: string }): Promise<ImportResult> {
 		const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
 		const sourceName = file.name;
 
@@ -79,7 +80,8 @@ export class Importer {
 				return { success: true, sourcePath: sourceName, warnings: output.warnings, skipped: true };
 			}
 
-			const frontmatter = this.buildFrontmatter(file.name, ext, output.frontmatterExtra);
+			const sourceAbsPath = opts?.sourceAbsPath ?? (file as any).path ?? '';
+			const frontmatter = this.buildFrontmatter(file.name, ext, sourceAbsPath, output.frontmatterExtra);
 			// Resolve bare asset filenames to vault-relative paths (non-wikilink mode)
 			const markdown = output.assets.length > 0
 				? this.resolveAssetLinks(output.markdown, basename)
@@ -195,12 +197,16 @@ export class Importer {
 	private buildFrontmatter(
 		filename: string,
 		format: string,
+		sourceAbsPath: string,
 		extra?: Record<string, string | boolean | number>,
 	): string {
 		const now = this.localISOString();
+		const fileUrl = sourceAbsPath
+			? `file:///${sourceAbsPath.replace(/\\/g, '/')}`
+			: filename;
 		const lines = [
 			'---',
-			`source_file: "${filename}"`,
+			`source_file: "${fileUrl}"`,
 			`source_format: "${format}"`,
 			`imported_at: "${now}"`,
 		];
@@ -318,5 +324,92 @@ export class Importer {
 			await this.ensureFolder(this.settings.destinationFolder);
 			await this.app.vault.create(logPath, `# Import Errors\n${entry}`);
 		}
+	}
+
+	async syncAllImportedFiles(): Promise<{ success: number; fail: number; skip: number }> {
+		const destFolder = normalizePath(this.settings.destinationFolder);
+		const exists = await this.app.vault.adapter.exists(destFolder);
+		if (!exists) {
+			return { success: 0, fail: 0, skip: 0 };
+		}
+
+		const files = this.app.vault.getFiles().filter(f =>
+			f.path.startsWith(destFolder + '/') && f.path.endsWith('.md'),
+		);
+
+		if (files.length === 0) {
+			return { success: 0, fail: 0, skip: 0 };
+		}
+
+		let success = 0;
+		let fail = 0;
+		let skip = 0;
+
+		for (const noteFile of files) {
+			try {
+				const content = await this.app.vault.read(noteFile);
+				const sourcePath = this.parseSourceFile(content);
+				if (!sourcePath) {
+					skip++;
+					continue;
+				}
+
+				const fileUrlMatch = sourcePath.match(/^file:\/\/\/(.+)$/);
+				const osPath = fileUrlMatch ? fileUrlMatch[1] : sourcePath;
+
+				let stat: fs.Stats;
+				try {
+					stat = await fs.promises.stat(osPath);
+				} catch {
+					skip++;
+					continue;
+				}
+				if (!stat.isFile()) {
+					skip++;
+					continue;
+				}
+
+				const filename = osPath.split(/[/\\]/).pop() ?? osPath;
+				const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+				if (!SUPPORTED_EXTENSIONS.includes(ext as SupportedExtension)) {
+					skip++;
+					continue;
+				}
+
+				const buffer = await fs.promises.readFile(osPath);
+				const output = await this.convert(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), ext as SupportedExtension);
+				const basename = noteFile.basename;
+
+				const frontmatter = this.buildFrontmatter(filename, ext, osPath, output.frontmatterExtra);
+				const markdown = output.assets.length > 0
+					? this.resolveAssetLinks(output.markdown, basename)
+					: output.markdown;
+				const newContent = frontmatter + markdown;
+
+				await this.app.vault.modify(noteFile, newContent);
+
+				if (output.assets.length > 0) {
+					await this.saveAssets(basename, output.assets);
+				}
+
+				success++;
+			} catch {
+				fail++;
+			}
+		}
+
+		return { success, fail, skip };
+	}
+
+	private parseSourceFile(content: string): string | null {
+		const fmMatch = content.match(/^---\n([\s\S]*?)\n---/);
+		if (!fmMatch) return null;
+
+		const lines = fmMatch[1].split('\n');
+		for (const line of lines) {
+			const m = line.match(/^source_file:\s*"(.+)"$/);
+			if (m) return m[1];
+		}
+		return null;
 	}
 }

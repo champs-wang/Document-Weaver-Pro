@@ -71,4 +71,10 @@ export const zh: Translations = {
 	STAT_IMAGES: '{n}张图片',
 	STAT_TABLES_ONE: '1个表格',
 	STAT_TABLES: '{n}个表格',
+
+	SYNC_TITLE: '立即同步文件',
+	SYNC_DESC: '重新转换所有已导入的文件，以应用插件最新功能',
+	SYNC_NO_FOLDER: '目标文件夹不存在或为空',
+	SYNC_RESULT: '同步完成：成功 {success} 个，失败 {fail} 个，跳过 {skip} 个',
+	SYNC_START: '开始同步...',
 };

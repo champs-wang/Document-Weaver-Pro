@@ -1,6 +1,6 @@
-import { App, PluginSettingTab, Setting } from 'obsidian';
+import { App, PluginSettingTab, Setting, Notice } from 'obsidian';
 import DocWeaverPlugin from './main';
-import { t } from './i18n';
+import { t, tFormat } from './i18n';
 
 export class DocWeaverSettingTab extends PluginSettingTab {
 	plugin: DocWeaverPlugin;
@@ -18,6 +18,7 @@ export class DocWeaverSettingTab extends PluginSettingTab {
 		this.renderOutputSection();
 		this.renderWatchSection();
 		this.renderAdvancedSection();
+		this.renderSyncSection();
 	}
 
 	private renderOutputSection(): void {
@@ -256,6 +257,39 @@ export class DocWeaverSettingTab extends PluginSettingTab {
 						await this.plugin.saveSettings();
 						// Re-render settings with new locale
 						this.display();
+					}),
+			);
+	}
+
+	private renderSyncSection(): void {
+		const { containerEl } = this;
+		containerEl.createEl('h3', { text: t('SYNC_TITLE') });
+
+		new Setting(containerEl)
+			.setName(t('SYNC_TITLE'))
+			.setDesc(t('SYNC_DESC'))
+			.addButton(btn =>
+				btn
+					.setButtonText(t('SYNC_TITLE'))
+					.setCta()
+					.onClick(async () => {
+						btn.setButtonText(t('SYNC_START'));
+						btn.setDisabled(true);
+
+						const result = await this.plugin.importer.syncAllImportedFiles();
+
+						btn.setButtonText(t('SYNC_TITLE'));
+						btn.setDisabled(false);
+
+						if (result.success === 0 && result.fail === 0 && result.skip === 0) {
+							new Notice(t('SYNC_NO_FOLDER'));
+						} else {
+							new Notice(tFormat('SYNC_RESULT', {
+								success: result.success,
+								fail: result.fail,
+								skip: result.skip,
+							}));
+						}
 					}),
 			);
 	}

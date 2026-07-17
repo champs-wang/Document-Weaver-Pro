@@ -77,6 +77,13 @@ export const en = {
 	STAT_IMAGES: '{n} images',
 	STAT_TABLES_ONE: '1 table',
 	STAT_TABLES: '{n} tables',
+
+	// Sync button
+	SYNC_TITLE: 'Sync imported files now',
+	SYNC_DESC: 'Re-convert all previously imported files to apply the latest plugin features',
+	SYNC_NO_FOLDER: 'Destination folder does not exist or is empty',
+	SYNC_RESULT: 'Sync complete: {success} succeeded, {fail} failed, {skip} skipped',
+	SYNC_START: 'Starting sync...',
 };
 
 export type Translations = typeof en;
