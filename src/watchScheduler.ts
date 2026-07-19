@@ -102,7 +102,29 @@ export class WatchScheduler {
 		try {
 			const buffer = await fs.promises.readFile(filePath);
 			const file = new File([buffer], filename);
-			const result = await this.importer.importSingleFile(file, { skipOpen: false, sourceAbsPath: filePath });
+
+			// Compute relative directory: folderPath → file's parent dir relative to the watched folder
+			// We need to find which watch folder this file belongs to
+			const watchFolder = this.settings.watchFolders
+				.map(f => f.trim())
+				.filter(f => f.length > 0)
+				.find(f => {
+					const normFile = nodePath.normalize(filePath).toLowerCase();
+					const normWatch = nodePath.normalize(f).toLowerCase();
+					return normFile.startsWith(normWatch + nodePath.sep);
+				});
+			let relativeDir = '';
+			if (watchFolder) {
+				const fileDir = nodePath.dirname(filePath);
+				relativeDir = nodePath.relative(watchFolder, fileDir).replace(/\\/g, '/');
+				if (relativeDir === '.' || relativeDir === '') relativeDir = '';
+			}
+
+			const result = await this.importer.importSingleFile(file, {
+				skipOpen: false,
+				sourceAbsPath: filePath,
+				relativeDir: relativeDir || undefined,
+			});
 
 			if (result.success) {
 				this.seen.add(seenKey);

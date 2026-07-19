@@ -1,5 +1,6 @@
 import { App, Notice, TFile, normalizePath } from 'obsidian';
 import * as fs from 'fs';
+import * as nodePath from 'path';
 import { DocWeaverSettings, ImportResult, ConverterOutput, SUPPORTED_EXTENSIONS, SupportedExtension } from './types';
 import { convertDocx } from './converters/docxConverter';
 import { convertPlain } from './converters/plainConverter';
@@ -61,7 +62,7 @@ export class Importer {
 		return results;
 	}
 
-	async importSingleFile(file: File, opts?: { skipOpen?: boolean; sourceAbsPath?: string }): Promise<ImportResult> {
+	async importSingleFile(file: File, opts?: { skipOpen?: boolean; sourceAbsPath?: string; relativeDir?: string }): Promise<ImportResult> {
 		const ext = file.name.split('.').pop()?.toLowerCase() ?? '';
 		const sourceName = file.name;
 
@@ -74,31 +75,48 @@ export class Importer {
 			const buffer = await file.arrayBuffer();
 			const output = await this.convert(buffer, ext as SupportedExtension);
 			const basename = file.name.replace(/\.[^.]+$/, '');
-			const destPath = await this.resolveDestPath(basename);
+
+			const sourceAbsPath = opts?.sourceAbsPath ?? (file as any).path ?? '';
+
+			// Compute relative dir: use explicit value; otherwise derive from sourceAbsPath
+			let relativeDir = opts?.relativeDir ?? '';
+			if (!relativeDir && sourceAbsPath) {
+				const parentDir = nodePath.dirname(sourceAbsPath);
+				const parsed = nodePath.parse(parentDir);
+				// If parent is not a drive root, use its name as the subdirectory
+				if (parsed.base && parsed.base !== parsed.root) {
+					relativeDir = parsed.base;
+				}
+			}
+
+			const destPath = await this.resolveDestPath(basename, relativeDir || undefined);
 
 			if (destPath === null) {
 				return { success: true, sourcePath: sourceName, warnings: output.warnings, skipped: true };
 			}
 
-			const sourceAbsPath = opts?.sourceAbsPath ?? (file as any).path ?? '';
+			// Ensure the target subfolder exists
+			if (relativeDir) {
+				await this.ensureFolder(normalizePath(`${this.settings.destinationFolder}/${relativeDir}`));
+			}
+			await this.ensureFolder(this.settings.destinationFolder);
+
 			const frontmatter = this.buildFrontmatter(file.name, ext, sourceAbsPath, output.frontmatterExtra);
 			// Resolve bare asset filenames to vault-relative paths (non-wikilink mode)
 			const markdown = output.assets.length > 0
-				? this.resolveAssetLinks(output.markdown, basename)
+				? this.resolveAssetLinks(output.markdown, basename, relativeDir || undefined)
 				: output.markdown;
 			const content = frontmatter + markdown;
 
-			await this.ensureFolder(this.settings.destinationFolder);
 			await this.writeNote(destPath, content);
 
 			if (output.assets.length > 0) {
-				await this.saveAssets(basename, output.assets);
+				await this.saveAssets(basename, output.assets, relativeDir || undefined);
 			}
 
 			if (output.additionalFiles && output.additionalFiles.length > 0) {
-				await this.ensureFolder(this.settings.destinationFolder);
 				for (const extra of output.additionalFiles) {
-					const extraPath = await this.resolveDestPath(extra.basename);
+					const extraPath = await this.resolveDestPath(extra.basename, relativeDir || undefined);
 					if (extraPath !== null) {
 						await this.writeNote(extraPath, extra.content);
 					}
@@ -172,9 +190,10 @@ export class Importer {
 		}
 	}
 
-	private async resolveDestPath(basename: string): Promise<string | null> {
+	private async resolveDestPath(basename: string, subDir?: string): Promise<string | null> {
 		const destFolder = normalizePath(this.settings.destinationFolder);
-		const candidate = normalizePath(`${destFolder}/${basename}.md`);
+		const targetFolder = subDir ? normalizePath(`${destFolder}/${subDir}`) : destFolder;
+		const candidate = normalizePath(`${targetFolder}/${basename}.md`);
 		const exists = await this.app.vault.adapter.exists(candidate);
 
 		if (!exists) return candidate;
@@ -186,7 +205,7 @@ export class Importer {
 				return candidate;
 			case 'number': {
 				for (let i = 1; i <= 999; i++) {
-					const numbered = normalizePath(`${destFolder}/${basename} ${i}.md`);
+					const numbered = normalizePath(`${targetFolder}/${basename} ${i}.md`);
 					if (!(await this.app.vault.adapter.exists(numbered))) return numbered;
 				}
 				return candidate; // fallback
@@ -244,8 +263,10 @@ export class Importer {
 		return `${Y}-${M}-${D} ${h}:${m}:${s}`;
 	}
 
-	private resolveAssetLinks(markdown: string, noteName: string): string {
-		const assetBase = normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${noteName}`);
+	private resolveAssetLinks(markdown: string, noteName: string, subDir?: string): string {
+		const assetBase = subDir
+			? normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${subDir}/${noteName}`)
+			: normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${noteName}`);
 
 		if (this.settings.useWikilinks) {
 			// Replace bare ![[filename.ext]] with path-qualified ![[assetBase/filename.ext]].
@@ -280,10 +301,10 @@ export class Importer {
 		}
 	}
 
-	private async saveAssets(noteName: string, assets: { filename: string; data: ArrayBuffer; mimeType: string }[]): Promise<void> {
-		const assetFolder = normalizePath(
-			`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${noteName}`,
-		);
+	private async saveAssets(noteName: string, assets: { filename: string; data: ArrayBuffer; mimeType: string }[], subDir?: string): Promise<void> {
+		const assetFolder = subDir
+			? normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${subDir}/${noteName}`)
+			: normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${noteName}`);
 		await this.ensureFolder(assetFolder);
 
 		for (const asset of assets) {
