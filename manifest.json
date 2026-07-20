@@ -1,7 +1,7 @@
 {
 	"id": "doc-weaver-pro",
 	"name": "Document Weaver Pro",
-	"version": "1.0.17",
+	"version": "1.0.18",
 	"minAppVersion": "1.4.0",
 	"description": "Convert local documents (Word, PDF, PowerPoint, HWP, Excel) to Markdown and save into your vault.",
 	"author": "champswang",

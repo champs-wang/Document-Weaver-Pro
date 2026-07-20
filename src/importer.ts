@@ -48,15 +48,26 @@ export class Importer {
 			return [];
 		}
 
+		// Extract the full filesystem path from File objects (Electron non-standard extension).
+		// Without this, relativeDir derivation in importSingleFile falls through
+		// when (file as any).path is unavailable in the Obsidian sandbox.
+		const getSourcePath = (f: File): string => {
+			return (f as any).path || (f as any).webkitRelativePath || '';
+		};
+
 		if (filtered.length === 1) {
-			const result = await this.importSingleFile(filtered[0]);
+			const f = filtered[0];
+			const result = await this.importSingleFile(f, { sourceAbsPath: getSourcePath(f) });
 			this.notifySingle(result);
 			return [result];
 		}
 
 		const results: ImportResult[] = [];
 		for (const file of filtered) {
-			results.push(await this.importSingleFile(file, { skipOpen: true }));
+			results.push(await this.importSingleFile(file, {
+				skipOpen: true,
+				sourceAbsPath: getSourcePath(file),
+			}));
 		}
 		this.notifyBulk(results);
 		return results;
@@ -88,6 +99,7 @@ export class Importer {
 					relativeDir = parsed.base;
 				}
 			}
+			console.log(`[DocWeaver] importSingleFile: sourceName="${sourceName}" sourceAbsPath="${sourceAbsPath}" relativeDir="${relativeDir}"`);
 
 			const destPath = await this.resolveDestPath(basename, relativeDir || undefined);
 
@@ -187,6 +199,8 @@ export class Importer {
 	private async resolveDestPath(basename: string, subDir?: string): Promise<string | null> {
 		const destFolder = normalizePath(this.settings.destinationFolder);
 		const targetFolder = subDir ? normalizePath(`${destFolder}/${subDir}`) : destFolder;
+
+		console.log(`[DocWeaver] resolveDestPath: basename="${basename}" subDir="${subDir ?? ''}" targetFolder="${targetFolder}"`);
 
 		// Ensure the target folder (and all its parents) exists before checking collision
 		await this.ensureFolders(targetFolder);
