@@ -75,6 +75,6 @@ export const ko: Translations = {
 	SYNC_TITLE: '지금 동기화',
 	SYNC_DESC: '가져온 모든 파일을 다시 변환하여 최신 플러그인 기능을 적용합니다',
 	SYNC_NO_FOLDER: '대상 폴더가 존재하지 않거나 비어 있습니다',
-	SYNC_RESULT: '동기화 완료: 성공 {success}개, 실패 {fail}개, 건너뜀 {skip}개',
+	SYNC_RESULT: '동기화 완료: 신규 {new_}개, 갱신 {updated}개, 실패 {failed}개, 건너뜀 {skipped}개',
 	SYNC_START: '동기화 시작...',
 };

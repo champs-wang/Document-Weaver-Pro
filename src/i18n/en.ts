@@ -82,7 +82,7 @@ export const en = {
 	SYNC_TITLE: 'Sync imported files now',
 	SYNC_DESC: 'Re-convert all previously imported files to apply the latest plugin features',
 	SYNC_NO_FOLDER: 'Destination folder does not exist or is empty',
-	SYNC_RESULT: 'Sync complete: {success} succeeded, {fail} failed, {skip} skipped',
+	SYNC_RESULT: 'Sync complete: {new_} new, {updated} updated, {failed} failed, {skipped} skipped',
 	SYNC_START: 'Starting sync...',
 };
 

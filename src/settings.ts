@@ -281,13 +281,14 @@ export class DocWeaverSettingTab extends PluginSettingTab {
 						btn.setButtonText(t('SYNC_TITLE'));
 						btn.setDisabled(false);
 
-						if (result.success === 0 && result.fail === 0 && result.skip === 0) {
+						if (result.new_ === 0 && result.updated === 0 && result.failed === 0 && result.skipped === 0) {
 							new Notice(t('SYNC_NO_FOLDER'));
 						} else {
 							new Notice(tFormat('SYNC_RESULT', {
-								success: result.success,
-								fail: result.fail,
-								skip: result.skip,
+								new_: result.new_,
+								updated: result.updated,
+								failed: result.failed,
+								skipped: result.skipped,
 							}));
 						}
 					}),

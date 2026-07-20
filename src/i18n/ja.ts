@@ -75,6 +75,6 @@ export const ja: Translations = {
 	SYNC_TITLE: '今すぐ同期',
 	SYNC_DESC: 'すべてのインポート済みファイルを再変換し、最新のプラグイン機能を適用します',
 	SYNC_NO_FOLDER: '保存先フォルダが存在しないか空です',
-	SYNC_RESULT: '同期完了: 成功 {success}件, 失敗 {fail}件, スキップ {skip}件',
+	SYNC_RESULT: '同期完了: 新規 {new_}件, 更新 {updated}件, 失敗 {failed}件, スキップ {skipped}件',
 	SYNC_START: '同期を開始...',
 };

@@ -145,6 +145,7 @@ export class Importer {
 			};
 		} catch (err) {
 			const error = err instanceof Error ? err.message : String(err);
+			console.error(`[DocWeaver] importSingleFile failed: "${sourceName}" — ${error}`, err);
 			return { success: false, sourcePath: sourceName, warnings: [], error };
 		}
 	}
@@ -391,61 +392,117 @@ export class Importer {
 		}
 	}
 
-	async syncAllImportedFiles(): Promise<{ success: number; fail: number; skip: number }> {
+	/**
+	 * Sync all imported files: scan watch folders for new files, then re-convert existing notes.
+	 * Returns counts for: new imports, updated re-conversions, failures, and skipped.
+	 */
+	async syncAllImportedFiles(): Promise<{ new_: number; updated: number; failed: number; skipped: number }> {
+		const stats = { new_: 0, updated: 0, failed: 0, skipped: 0 };
 		const destFolder = normalizePath(this.settings.destinationFolder);
-		const exists = await this.app.vault.adapter.exists(destFolder);
-		if (!exists) {
-			return { success: 0, fail: 0, skip: 0 };
-		}
 
-		const files = this.app.vault.getFiles().filter(f =>
-			f.path.startsWith(destFolder + '/') && f.path.endsWith('.md'),
-		);
+		// Build a set of OS-normalized source paths from existing imported notes.
+		// We use this to determine which watch-folder files have already been imported.
+		const existingSourcePaths = new Set<string>();
+		const notesBySourcePath = new Map<string, TFile>(); // normalized sourcePath → note TFile
 
-		if (files.length === 0) {
-			return { success: 0, fail: 0, skip: 0 };
-		}
-
-		let success = 0;
-		let fail = 0;
-		let skip = 0;
-
-		for (const noteFile of files) {
-			try {
-				const content = await this.app.vault.read(noteFile);
-				const sourcePath = this.parseSourceFile(content);
-				if (!sourcePath) {
-					skip++;
-					continue;
+		const destExists = await this.app.vault.adapter.exists(destFolder);
+		if (destExists) {
+			const notes = this.app.vault.getFiles().filter(f =>
+				f.path.startsWith(destFolder + '/') && f.path.endsWith('.md'),
+			);
+			for (const note of notes) {
+				try {
+					const content = await this.app.vault.read(note);
+					const sourcePath = this.parseSourceFile(content);
+					if (!sourcePath) continue;
+					const fileUrlMatch = sourcePath.match(/^file:\/\/\/(.+)$/);
+					const osPath = fileUrlMatch ? fileUrlMatch[1] : sourcePath;
+					const normalized = nodePath.normalize(osPath);
+					existingSourcePaths.add(normalized);
+					notesBySourcePath.set(normalized, note);
+				} catch {
+					// unreadable note — skip
 				}
+			}
+		}
 
-				const fileUrlMatch = sourcePath.match(/^file:\/\/\/(.+)$/);
-				const osPath = fileUrlMatch ? fileUrlMatch[1] : sourcePath;
+		// ---- Phase 1: scan watch folders for NEW files ----
+		const watchFolders = this.settings.watchFolders
+			.map(f => f.trim())
+			.filter(f => f.length > 0);
 
+		for (const watchFolder of watchFolders) {
+			const files = await this.scanWatchFolder(watchFolder, this.settings.watchSubfolders);
+			for (const filePath of files) {
+				const filename = nodePath.basename(filePath);
+				if (this.shouldExclude(filename)) continue;
+
+				const ext = filename.split('.').pop()?.toLowerCase() ?? '';
+				if (!SUPPORTED_EXTENSIONS.includes(ext as SupportedExtension)) continue;
+
+				const normalized = nodePath.normalize(filePath);
+				if (existingSourcePaths.has(normalized)) continue;
+
+				// New file — import it
+				try {
+					const fileDir = nodePath.dirname(filePath);
+					let relativeDir = nodePath.relative(watchFolder, fileDir).replace(/\\/g, '/');
+					if (relativeDir === '.' || relativeDir === '') relativeDir = '';
+
+					const buffer = await fs.promises.readFile(filePath);
+					const fileObj = new File([buffer], filename);
+
+					const result = await this.importSingleFile(fileObj, {
+						skipOpen: true,
+						sourceAbsPath: filePath,
+						relativeDir: relativeDir || undefined,
+					});
+
+					if (result.success && !result.skipped) {
+						stats.new_++;
+					} else if (result.skipped) {
+						stats.skipped++;
+					} else {
+						stats.failed++;
+					}
+				} catch (err) {
+					console.error(`[DocWeaver] sync: failed to import new file "${filePath}"`, err);
+					stats.failed++;
+				}
+			}
+		}
+
+		// ---- Phase 2: re-convert EXISTING notes ----
+		for (const [normalizedSource, noteFile] of notesBySourcePath) {
+			try {
+				// Verify source file still exists
 				let stat: fs.Stats;
 				try {
-					stat = await fs.promises.stat(osPath);
+					stat = await fs.promises.stat(normalizedSource);
 				} catch {
-					skip++;
+					stats.skipped++;
 					continue;
 				}
 				if (!stat.isFile()) {
-					skip++;
+					stats.skipped++;
 					continue;
 				}
 
-				const filename = osPath.split(/[/\\]/).pop() ?? osPath;
+				const filename = nodePath.basename(normalizedSource);
 				const ext = filename.split('.').pop()?.toLowerCase() ?? '';
 				if (!SUPPORTED_EXTENSIONS.includes(ext as SupportedExtension)) {
-					skip++;
+					stats.skipped++;
 					continue;
 				}
 
-				const buffer = await fs.promises.readFile(osPath);
-				const output = await this.convert(buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength), ext as SupportedExtension);
+				const buffer = await fs.promises.readFile(normalizedSource);
+				const output = await this.convert(
+					buffer.buffer.slice(buffer.byteOffset, buffer.byteOffset + buffer.byteLength),
+					ext as SupportedExtension,
+				);
 				const basename = noteFile.basename;
 
-				const frontmatter = this.buildFrontmatter(filename, ext, osPath, output.frontmatterExtra);
+				const frontmatter = this.buildFrontmatter(filename, ext, normalizedSource, output.frontmatterExtra);
 				const markdown = output.assets.length > 0
 					? this.resolveAssetLinks(output.markdown, basename)
 					: output.markdown;
@@ -457,13 +514,40 @@ export class Importer {
 					await this.saveAssets(basename, output.assets);
 				}
 
-				success++;
-			} catch {
-				fail++;
+				stats.updated++;
+			} catch (err) {
+				console.error(`[DocWeaver] sync: failed to re-convert "${noteFile.path}"`, err);
+				stats.failed++;
 			}
 		}
 
-		return { success, fail, skip };
+		return stats;
+	}
+
+	/**
+	 * Recursively scan a directory for files, respecting the watchSubfolders setting.
+	 */
+	private async scanWatchFolder(folderPath: string, recursive: boolean): Promise<string[]> {
+		const results: string[] = [];
+		try {
+			const entries = await fs.promises.readdir(folderPath, { withFileTypes: true });
+			for (const entry of entries) {
+				const fullPath = nodePath.join(folderPath, entry.name);
+				if (entry.isDirectory()) {
+					if (recursive) {
+						const sub = await this.scanWatchFolder(fullPath, recursive);
+						results.push(...sub);
+					}
+					continue;
+				}
+				if (entry.isFile()) {
+					results.push(fullPath);
+				}
+			}
+		} catch {
+			// folder missing or no permission — silently skip
+		}
+		return results;
 	}
 
 	private parseSourceFile(content: string): string | null {
