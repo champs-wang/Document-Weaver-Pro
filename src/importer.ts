@@ -95,12 +95,6 @@ export class Importer {
 				return { success: true, sourcePath: sourceName, warnings: output.warnings, skipped: true };
 			}
 
-			// Ensure the target subfolder exists
-			if (relativeDir) {
-				await this.ensureFolder(normalizePath(`${this.settings.destinationFolder}/${relativeDir}`));
-			}
-			await this.ensureFolder(this.settings.destinationFolder);
-
 			const frontmatter = this.buildFrontmatter(file.name, ext, sourceAbsPath, output.frontmatterExtra);
 			// Resolve bare asset filenames to vault-relative paths (non-wikilink mode)
 			const markdown = output.assets.length > 0
@@ -193,6 +187,10 @@ export class Importer {
 	private async resolveDestPath(basename: string, subDir?: string): Promise<string | null> {
 		const destFolder = normalizePath(this.settings.destinationFolder);
 		const targetFolder = subDir ? normalizePath(`${destFolder}/${subDir}`) : destFolder;
+
+		// Ensure the target folder (and all its parents) exists before checking collision
+		await this.ensureFolders(targetFolder);
+
 		const candidate = normalizePath(`${targetFolder}/${basename}.md`);
 		const exists = await this.app.vault.adapter.exists(candidate);
 
@@ -284,11 +282,31 @@ export class Importer {
 		});
 	}
 
-	private async ensureFolder(folderPath: string): Promise<void> {
+	/**
+	 * Recursively ensure all parent directories exist.
+	 * Walks the path from root down, creating each missing segment.
+	 * Wraps createFolder in try-catch to tolerate concurrent creation by parallel imports.
+	 */
+	private async ensureFolders(folderPath: string): Promise<void> {
 		const normalized = normalizePath(folderPath);
-		const exists = await this.app.vault.adapter.exists(normalized);
-		if (!exists) {
-			await this.app.vault.createFolder(normalized);
+		const parts = normalized.split('/');
+		let current = '';
+		for (const part of parts) {
+			if (!part) continue;
+			current = current ? `${current}/${part}` : part;
+			try {
+				const exists = await this.app.vault.adapter.exists(current);
+				if (!exists) {
+					await this.app.vault.createFolder(current);
+				}
+			} catch (err) {
+				// Ignore "folder already exists" from concurrent createFolder calls
+				const msg = err instanceof Error ? err.message : String(err);
+				if (!msg.toLowerCase().includes('already exists') &&
+					!msg.toLowerCase().includes('folder already exists')) {
+					throw err;
+				}
+			}
 		}
 	}
 
@@ -305,7 +323,7 @@ export class Importer {
 		const assetFolder = subDir
 			? normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${subDir}/${noteName}`)
 			: normalizePath(`${this.settings.destinationFolder}/${this.settings.assetSubfolder}/${noteName}`);
-		await this.ensureFolder(assetFolder);
+		await this.ensureFolders(assetFolder);
 
 		for (const asset of assets) {
 			const assetPath = normalizePath(`${assetFolder}/${asset.filename}`);
@@ -354,7 +372,7 @@ export class Importer {
 			const prev = await this.app.vault.read(existing);
 			await this.app.vault.modify(existing, prev + entry);
 		} else {
-			await this.ensureFolder(this.settings.destinationFolder);
+			await this.ensureFolders(this.settings.destinationFolder);
 			await this.app.vault.create(logPath, `# Import Errors\n${entry}`);
 		}
 	}
