@@ -1,11 +1,8 @@
 import { Plugin, MarkdownView, Notice, TFile } from 'obsidian';
-import { StateEffect } from '@codemirror/state';
-import { EditorView } from '@codemirror/view';
 
 export class ReadonlyManager {
 	private plugin: Plugin;
 	private statusBarItem: HTMLElement;
-	private isReadonly: boolean = false;
 
 	constructor(plugin: Plugin) {
 		this.plugin = plugin;
@@ -24,62 +21,76 @@ export class ReadonlyManager {
 		// Ribbon icon
 		this.plugin.addRibbonIcon('lock', 'Toggle read-only mode', () => this.toggleReadonly());
 
-		// Active leaf change
+		// layout-change: enforce preview mode on all readonly leaves
 		this.plugin.registerEvent(
-			this.plugin.app.workspace.on('active-leaf-change', () => this.onActiveLeafChange()),
+			this.plugin.app.workspace.on('layout-change', () => this.enforceReadonlyLeaves()),
 		);
 
-		// Metadata change (e.g. frontmatter updated externally)
+		// active-leaf-change: update status bar for current leaf
 		this.plugin.registerEvent(
-			this.plugin.app.metadataCache.on('changed', (file) => {
-				const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-				if (view && view.file === file) {
-					this.applyReadonlyState(view);
-				}
-			}),
+			this.plugin.app.workspace.on('active-leaf-change', () => this.updateStatusBar()),
 		);
 
-		// Layout ready — apply to initial pane
-		this.plugin.app.workspace.onLayoutReady(() => this.onActiveLeafChange());
+		// Initial apply
+		this.plugin.app.workspace.onLayoutReady(() => {
+			this.enforceReadonlyLeaves();
+			this.updateStatusBar();
+		});
 	}
 
-	private onActiveLeafChange(): void {
-		const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-		if (view) {
-			this.applyReadonlyState(view);
-		} else {
-			this.statusBarItem.setText('');
+	/**
+	 * Iterate all markdown leaves and force preview mode for those with readonly:true.
+	 */
+	private enforceReadonlyLeaves(): void {
+		const leaves = this.plugin.app.workspace.getLeavesOfType('markdown');
+
+		for (const leaf of leaves) {
+			const view = leaf.view;
+			if (!(view instanceof MarkdownView)) continue;
+
+			const readonly = this.getReadonly(view.file);
+			if (readonly !== true) continue;
+
+			const viewState = leaf.getViewState();
+			if (viewState.state?.mode === 'preview') continue;
+
+			leaf.setViewState({
+				type: 'markdown',
+				state: { ...viewState.state, mode: 'preview' },
+			});
 		}
 	}
 
-	private applyReadonlyState(view: MarkdownView): void {
-		const readonly = this.getReadonlyFromFrontmatter(view);
+	/**
+	 * Update status bar to reflect current active leaf's readonly state.
+	 */
+	private updateStatusBar(): void {
+		const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
 
+		if (!view?.file) {
+			this.statusBarItem.setText('');
+			return;
+		}
+
+		const readonly = this.getReadonly(view.file);
 		if (readonly === null) {
 			this.statusBarItem.setText('');
 			return;
 		}
 
-		this.isReadonly = readonly;
-		const cm = (view.editor as any)?.cm as EditorView | undefined;
-
-		if (cm) {
-			cm.dispatch({
-				effects: StateEffect.appendConfig.of(EditorView.editable.of(!readonly)),
-			});
-		}
-
 		if (readonly) {
-			this.statusBarItem.setText('🔒 ' + this.getStatusText(true));
-			this.statusBarItem.style.cursor = 'pointer';
+			this.statusBarItem.setText('\u{1F512} Read-only (click to edit)');
 		} else {
-			this.statusBarItem.setText('✏️ ' + this.getStatusText(false));
-			this.statusBarItem.style.cursor = 'pointer';
+			this.statusBarItem.setText('\u270F\uFE0F Editable (click to lock)');
 		}
+		this.statusBarItem.style.cursor = 'pointer';
 	}
 
-	private getReadonlyFromFrontmatter(view: MarkdownView): boolean | null {
-		const file = view.file;
+	/**
+	 * Read the `readonly` field from file's front matter cache.
+	 * Returns null if the field is not present.
+	 */
+	private getReadonly(file: TFile | null): boolean | null {
 		if (!file) return null;
 
 		const cache = this.plugin.app.metadataCache.getFileCache(file);
@@ -89,9 +100,18 @@ export class ReadonlyManager {
 		return null;
 	}
 
+	/**
+	 * Toggle the current note's readonly flag and immediately apply the mode change.
+	 */
 	private async toggleReadonly(): Promise<void> {
-		const view = this.plugin.app.workspace.getActiveViewOfType(MarkdownView);
-		if (!view?.file) {
+		const leaf = this.plugin.app.workspace.getMostRecentLeaf();
+		if (!leaf) {
+			new Notice('No active note');
+			return;
+		}
+
+		const view = leaf.view;
+		if (!(view instanceof MarkdownView) || !view.file) {
 			new Notice('No active note');
 			return;
 		}
@@ -105,6 +125,7 @@ export class ReadonlyManager {
 		const current = cache.frontmatter.readonly === true;
 		const newValue = !current;
 
+		// Update front matter in file
 		const content = await this.plugin.app.vault.read(view.file);
 		const newContent = content.replace(
 			/^readonly:\s*(true|false)/m,
@@ -112,11 +133,17 @@ export class ReadonlyManager {
 		);
 		await this.plugin.app.vault.modify(view.file, newContent);
 
-		// State applied via metadataCache 'changed' event → applyReadonlyState
-		new Notice(newValue ? 'Switched to read-only' : 'Switched to editable');
-	}
+		// Immediately apply mode change
+		const viewState = leaf.getViewState();
+		leaf.setViewState({
+			type: 'markdown',
+			state: {
+				...viewState.state,
+				mode: newValue ? 'preview' : 'source',
+			},
+		});
 
-	private getStatusText(readonly: boolean): string {
-		return readonly ? 'Read-only (click to edit)' : 'Editable (click to lock)';
+		this.updateStatusBar();
+		new Notice(newValue ? 'Switched to read-only' : 'Switched to editable');
 	}
 }
