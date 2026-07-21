@@ -99,6 +99,20 @@ export class DocWeaverSettingTab extends PluginSettingTab {
 					await this.plugin.saveSettings();
 				}),
 			);
+
+		new Setting(containerEl)
+			.setName(t('DEFAULT_READONLY'))
+			.setDesc(t('DEFAULT_READONLY_DESC'))
+			.addDropdown(drop =>
+				drop
+					.addOption('true', t('READONLY_OPT_READONLY'))
+					.addOption('false', t('READONLY_OPT_EDITABLE'))
+					.setValue(String(this.plugin.settings.defaultReadonly))
+					.onChange(async v => {
+						this.plugin.settings.defaultReadonly = v === 'true';
+						await this.plugin.saveSettings();
+					}),
+			);
 	}
 
 	private renderWatchSection(): void {

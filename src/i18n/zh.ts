@@ -77,4 +77,9 @@ export const zh: Translations = {
 	SYNC_NO_FOLDER: '目标文件夹不存在或为空',
 	SYNC_RESULT: '同步完成：新增 {new_} 个，更新 {updated} 个，失败 {failed} 个，跳过 {skipped} 个',
 	SYNC_START: '开始同步...',
+
+	DEFAULT_READONLY: '默认编辑模式',
+	DEFAULT_READONLY_DESC: '导入后笔记的默认编辑模式',
+	READONLY_OPT_READONLY: '只读',
+	READONLY_OPT_EDITABLE: '可编辑',
 };

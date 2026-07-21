@@ -77,4 +77,9 @@ export const ja: Translations = {
 	SYNC_NO_FOLDER: '保存先フォルダが存在しないか空です',
 	SYNC_RESULT: '同期完了: 新規 {new_}件, 更新 {updated}件, 失敗 {failed}件, スキップ {skipped}件',
 	SYNC_START: '同期を開始...',
+
+	DEFAULT_READONLY: 'デフォルト編集モード',
+	DEFAULT_READONLY_DESC: 'インポートされたノートのデフォルト編集モード',
+	READONLY_OPT_READONLY: '読み取り専用',
+	READONLY_OPT_EDITABLE: '編集可能',
 };

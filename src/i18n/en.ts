@@ -84,6 +84,12 @@ export const en = {
 	SYNC_NO_FOLDER: 'Destination folder does not exist or is empty',
 	SYNC_RESULT: 'Sync complete: {new_} new, {updated} updated, {failed} failed, {skipped} skipped',
 	SYNC_START: 'Starting sync...',
+
+	// Default readonly mode
+	DEFAULT_READONLY: 'Default edit mode',
+	DEFAULT_READONLY_DESC: 'Default edit mode for imported notes',
+	READONLY_OPT_READONLY: 'Read-only',
+	READONLY_OPT_EDITABLE: 'Editable',
 };
 
 export type Translations = typeof en;

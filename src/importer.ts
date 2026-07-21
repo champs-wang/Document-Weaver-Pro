@@ -241,6 +241,7 @@ export class Importer {
 			`source_file: "${fileUrl}"`,
 			`source_format: "${format}"`,
 			`imported_at: "${now}"`,
+			`readonly: ${this.settings.defaultReadonly}`,
 		];
 		// Add note_path (wiki-link to source file) if source is inside the vault
 		if (sourceAbsPath) {

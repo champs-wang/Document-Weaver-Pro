@@ -4,6 +4,7 @@ import { DocWeaverSettingTab } from './settings';
 import { Importer } from './importer';
 import { DropHandler } from './dropHandler';
 import { WatchScheduler } from './watchScheduler';
+import { ReadonlyManager } from './readonly';
 import { setLocale, t } from './i18n';
 
 interface PluginData {
@@ -38,6 +39,8 @@ export default class DocWeaverPlugin extends Plugin {
 			name: t('CMD_IMPORT_FILE'),
 			callback: () => this.importer.pickAndImport(),
 		});
+
+		new ReadonlyManager(this).onload();
 
 		this.addSettingTab(new DocWeaverSettingTab(this.app, this));
 	}

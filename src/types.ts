@@ -14,6 +14,7 @@ export interface DocWeaverSettings {
 	includeHiddenFiles: boolean;
 	excludePatterns: string;
 	language: 'auto' | 'en' | 'ko' | 'ja' | 'zh';
+	defaultReadonly: boolean;
 }
 
 export const DEFAULT_SETTINGS: DocWeaverSettings = {
@@ -32,6 +33,7 @@ export const DEFAULT_SETTINGS: DocWeaverSettings = {
 	includeHiddenFiles: false,
 	excludePatterns: '',
 	language: 'auto',
+	defaultReadonly: true,
 };
 
 export interface ConversionWarning {

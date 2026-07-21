@@ -77,4 +77,9 @@ export const ko: Translations = {
 	SYNC_NO_FOLDER: '대상 폴더가 존재하지 않거나 비어 있습니다',
 	SYNC_RESULT: '동기화 완료: 신규 {new_}개, 갱신 {updated}개, 실패 {failed}개, 건너뜀 {skipped}개',
 	SYNC_START: '동기화 시작...',
+
+	DEFAULT_READONLY: '기본 편집 모드',
+	DEFAULT_READONLY_DESC: '가져온 노트의 기본 편집 모드',
+	READONLY_OPT_READONLY: '읽기 전용',
+	READONLY_OPT_EDITABLE: '편집 가능',
 };
